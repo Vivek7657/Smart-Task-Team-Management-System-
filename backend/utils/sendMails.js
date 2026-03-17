@@ -1,24 +1,21 @@
-const nodemailer = require("nodemailer");
+const { Resend } = require('resend');
 
-/*SMTP TRANSPORTER*/
-const transporter = nodemailer.createTransport({
-    service: "gmail",
-    auth: {
-        user: process.env.SMTP_EMAIL,
-        pass: process.env.SMTP_PASS,
-    },
-});
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 /*SEND MAIL FUNCTION*/
 exports.sendMail = async (to, subject, html) => {
-    await transporter.sendMail({
-        from: process.env.SMTP_EMAIL,
+    const { error } = await resend.emails.send({
+        from: 'Smart Task Manager <onboarding@resend.dev>',
         to,
         subject,
         html,
     });
-};
 
+    if (error) {
+        console.error('Resend email error:', error);
+        throw new Error('Failed to send email');
+    }
+};
 
 exports.signupEmailTemplate = (name) => {
     return `
@@ -29,7 +26,7 @@ exports.signupEmailTemplate = (name) => {
 
             <p>
                 You can now start managing your tasks and teams inside
-                <strong>Smart Task & Team Management System</strong>.
+                <strong>Smart Task &amp; Team Management System</strong>.
             </p>
 
             <hr/>
