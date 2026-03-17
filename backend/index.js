@@ -6,15 +6,16 @@ const mongoose = require('mongoose');
 dotenv.config();
 
 const app = express();
-const allowedOrigins = [
-    'http://localhost:5173',
-    process.env.FRONTEND_URL
-].filter(Boolean);
-
 app.use(cors({
     origin: function (origin, callback) {
-        // Allow requests with no origin (Postman, mobile apps, curl)
-        if (!origin || allowedOrigins.includes(origin)) {
+        // Allow: no origin (Postman / curl), localhost, any Vercel preview or production URL
+        if (
+            !origin ||
+            origin === 'http://localhost:5173' ||
+            origin === process.env.FRONTEND_URL ||
+            /^https:\/\/smart-task-team-management-system.*\.vercel\.app$/.test(origin) ||
+            /^https:\/\/.*\.vercel\.app$/.test(origin)
+        ) {
             callback(null, true);
         } else {
             callback(new Error('Not allowed by CORS'));
