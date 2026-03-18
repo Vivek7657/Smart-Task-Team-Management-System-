@@ -46,6 +46,17 @@ app.use('/api/auth/resend-verification', require('./routes/auth'));
 app.use('/api/auth/forgot-password', require('./routes/auth'));
 app.use('/api/auth/reset-password', require('./routes/auth'));
 
+// Global error handler — ensures CORS headers are ALWAYS sent even on crashes
+app.use((err, req, res, next) => {
+    const origin = req.headers.origin;
+    if (origin) {
+        res.setHeader('Access-Control-Allow-Origin', origin);
+        res.setHeader('Access-Control-Allow-Credentials', 'true');
+    }
+    console.error('🔴 Unhandled error:', err.message);
+    res.status(500).json({ message: err.message || 'Server error' });
+});
+
 // Connect to MongoDB and start server
 const PORT = process.env.PORT || 5000;
 const MONGO_URI = process.env.MONGO_URI || '';

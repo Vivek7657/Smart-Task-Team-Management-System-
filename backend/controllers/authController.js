@@ -26,23 +26,28 @@ exports.register = async (req, res) => {
         });
 
         const verificationToken = crypto.randomBytes(32).toString("hex");
-
         user.emailVerificationToken = verificationToken;
         user.emailVerificationExpires = Date.now() + 24 * 60 * 60 * 1000;
 
-        await user.save();   // ✅ IMPORTANT
+        await user.save();
 
-        const verifyUrl = `${process.env.FRONTEND_URL}/verify-email?token=${verificationToken}`;
-
-        await sendMail(
-            user.email,
-            "Verify your email",
-            `
+        // Try to send verification email — but don't crash registration if it fails
+        try {
+            const verifyUrl = `${process.env.FRONTEND_URL}/verify-email?token=${verificationToken}`;
+            await sendMail(
+                user.email,
+                "Verify your email",
+                `
 <h2>Verify your account</h2>
 <p>Click below to verify your email:</p>
 <a href="${verifyUrl}">Verify Email</a>
 `
-        );
+            );
+            console.log('✅ Verification email sent to', user.email);
+        } catch (emailErr) {
+            console.error('⚠️ Email send failed (user still registered):', emailErr.message);
+            // Registration continues — user can request resend from login page
+        }
 
         const token = jwt.sign(
             { id: user._id, role: user.role },
