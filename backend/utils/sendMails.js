@@ -13,12 +13,20 @@ const transporter = nodemailer.createTransport({
 
 /*SEND MAIL FUNCTION*/
 exports.sendMail = async (to, subject, html) => {
-    await transporter.sendMail({
-        from: `"Smart Task Manager" <${process.env.BREVO_EMAIL}>`,
-        to,
-        subject,
-        html,
-    });
+    try {
+        await transporter.sendMail({
+            from: `"Smart Task Manager" <${process.env.BREVO_EMAIL}>`,
+            to,
+            subject,
+            html,
+        });
+    } catch (err) {
+        console.error('❌ Email send failed:', err.message);
+        console.error('❌ Full error:', JSON.stringify(err, null, 2));
+        console.error('❌ BREVO_EMAIL set?', !!process.env.BREVO_EMAIL);
+        console.error('❌ BREVO_SMTP_KEY set?', !!process.env.BREVO_SMTP_KEY);
+        throw new Error('Failed to send email: ' + err.message);
+    }
 };
 
 exports.signupEmailTemplate = (name) => {
