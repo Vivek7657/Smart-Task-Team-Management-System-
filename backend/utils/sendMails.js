@@ -1,55 +1,50 @@
-const nodemailer = require("nodemailer");
+/*
+ * Email sender using Brevo Transactional Email HTTP API
+ * Uses HTTPS (port 443) — works on ALL cloud platforms including Render free tier
+ * SMTP (port 587) is blocked by Render — this bypasses that entirely
+ */
 
-/*BREVO SMTP TRANSPORTER*/
-const transporter = nodemailer.createTransport({
-    host: "smtp-relay.brevo.com",
-    port: 587,
-    secure: false,
-    auth: {
-        user: process.env.BREVO_EMAIL,      // Your Brevo account email
-        pass: process.env.BREVO_SMTP_KEY,   // Brevo SMTP key (not your password)
-    },
-});
-
-/*SEND MAIL FUNCTION*/
 exports.sendMail = async (to, subject, html) => {
-    try {
-        await transporter.sendMail({
-            from: `"Smart Task Manager" <${process.env.BREVO_EMAIL}>`,
-            to,
-            subject,
-            html,
-        });
-    } catch (err) {
-        console.error('❌ Email send failed:', err.message);
-        console.error('❌ Full error:', JSON.stringify(err, null, 2));
-        console.error('❌ BREVO_EMAIL set?', !!process.env.BREVO_EMAIL);
-        console.error('❌ BREVO_SMTP_KEY set?', !!process.env.BREVO_SMTP_KEY);
-        throw new Error('Failed to send email: ' + err.message);
+    const response = await fetch('https://api.brevo.com/v3/smtp/email', {
+        method: 'POST',
+        headers: {
+            'api-key': process.env.BREVO_API_KEY,
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+        },
+        body: JSON.stringify({
+            sender: {
+                name: 'Smart Task Manager',
+                email: process.env.BREVO_SENDER_EMAIL   // your verified sender email
+            },
+            to: [{ email: to }],
+            subject: subject,
+            htmlContent: html
+        })
+    });
+
+    if (!response.ok) {
+        const errorBody = await response.text();
+        console.error('❌ Brevo API error:', response.status, errorBody);
+        throw new Error(`Brevo API failed: ${response.status} - ${errorBody}`);
     }
+
+    console.log('✅ Email sent via Brevo API to:', to);
 };
 
 exports.signupEmailTemplate = (name) => {
     return `
         <div style="font-family: Arial, sans-serif; padding: 20px;">
             <h2 style="color:#4f46e5;">Welcome ${name} 🎉</h2>
-
             <p>Your account has been successfully created.</p>
-
-            <p>
-                You can now start managing your tasks and teams inside
+            <p>You can now start managing your tasks and teams inside
                 <strong>Smart Task &amp; Team Management System</strong>.
             </p>
-
             <hr/>
-
             <p style="font-size:14px;color:#666;">
                 If you did not create this account, please ignore this email.
             </p>
-
-            <p style="margin-top:20px;">
-                🚀 Happy Productivity!
-            </p>
+            <p style="margin-top:20px;">🚀 Happy Productivity!</p>
         </div>
     `;
 };
