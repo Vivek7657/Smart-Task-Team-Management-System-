@@ -1,20 +1,24 @@
-const { Resend } = require('resend');
+const nodemailer = require("nodemailer");
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+/*BREVO SMTP TRANSPORTER*/
+const transporter = nodemailer.createTransport({
+    host: "smtp-relay.brevo.com",
+    port: 587,
+    secure: false,
+    auth: {
+        user: process.env.BREVO_EMAIL,      // Your Brevo account email
+        pass: process.env.BREVO_SMTP_KEY,   // Brevo SMTP key (not your password)
+    },
+});
 
 /*SEND MAIL FUNCTION*/
 exports.sendMail = async (to, subject, html) => {
-    const { error } = await resend.emails.send({
-        from: 'Smart Task Manager <onboarding@resend.dev>',
+    await transporter.sendMail({
+        from: `"Smart Task Manager" <${process.env.BREVO_EMAIL}>`,
         to,
         subject,
         html,
     });
-
-    if (error) {
-        console.error('Resend email error:', error);
-        throw new Error('Failed to send email');
-    }
 };
 
 exports.signupEmailTemplate = (name) => {
